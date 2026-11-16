@@ -16,6 +16,11 @@ for cand in (DEV, ALT):
     if cand.is_dir() and str(cand) not in sys.path:
         sys.path.insert(0, str(cand))
 
+try:  # 先把控制台切到 UTF-8，否则英文版 Windows（cp1252）下打印中文直接崩
+    import io_util  # noqa: F401
+except Exception:  # pragma: no cover - 打包环境缺失时不影响主流程
+    pass
+
 USAGE = """kiro-zh — Kiro 界面汉化
 
 用法:
