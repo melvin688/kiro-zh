@@ -48,8 +48,20 @@ def _work_dir() -> Path:
     return d
 
 
-def _translate_wizard() -> int:
+def _read_key(prompt: str) -> str:
+    """控制台里用 getpass（不回显）；管道/重定向输入时退回普通读行，避免卡死。"""
     import getpass
+
+    try:
+        if sys.stdin is not None and sys.stdin.isatty():
+            return getpass.getpass(prompt)
+        print(prompt)
+        return (sys.stdin.readline() if sys.stdin else "").strip()
+    except (KeyboardInterrupt, EOFError):
+        return ""
+
+
+def _translate_wizard() -> int:
     import os
 
     import translate_missing
@@ -57,11 +69,7 @@ def _translate_wizard() -> int:
     if not (os.environ.get("KIRO_ZH_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
             or os.environ.get("OPENAI_API_KEY")):
         print("补译需要 OpenAI 兼容接口的 API key（默认 DeepSeek，key 只在本地用，不会上传别处）。")
-        try:
-            key = getpass.getpass("粘贴 key（输入不回显，直接回车取消）：").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\n已取消")
-            return 1
+        key = _read_key("粘贴 key（输入不回显，直接回车取消）：").strip()
         if not key:
             print("已取消")
             return 1
