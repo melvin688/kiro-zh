@@ -5,7 +5,8 @@
 - 单测 17 → 21 条：新增 macOS / Linux 的 `exe_path()` 定位、找不到二进制返回 `None`、`_clear_cache()` 只清缓存目录。
 - `test_windows_globs` 改为 mock 平台与环境变量，不再依赖真实 Windows 环境变量，可在 Linux 上跑。
 - CI 增加 `linux` 作业（ubuntu-latest）：语法检查 + 21 条单测，持续验证 Linux 分支。
-- 验证方式补记：WSL2 Ubuntu 24.04 上用宿主英文原件的副本跑完整替换链，57 条命中、3 个 `.zhbak`、路径与数据目录定位正确；macOS 仍无实机。
+- 验证方式补记：WSL2 Ubuntu 24.04 上用宿主英文原件的副本跑完整替换链，57 条命中、3 个 `.zhbak`、路径与数据目录定位正确。
+- 新增 `macos-e2e` 作业（手动 / tag 触发）：在 Apple 芯片 macOS runner 上下载官方 dmg、解包后对真实 `Kiro.app` 打补丁并验收——21 条单测在真 Darwin 上通过，替换 8/8/22/4/3/30 条、12 个 `.zhbak`、菜单与额度条标记全 True。
 
 ## 0.6.0 — 2026-11-16
 

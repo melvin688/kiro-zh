@@ -138,9 +138,9 @@ python scripts/restore.py --restore  # roll back from .zhbak files
 
 **Linux**：在 WSL2 Ubuntu 24.04（Python 3.12）上跑通 21 条单测，并用宿主的英文原件副本走完整替换链——57 条命中、3 个 `.zhbak` 生成、`find_app_root` / `exe_path` / `data_dir`（`$XDG_CONFIG_HOME/Kiro`）都定位正确。没有装 Kiro 的 Linux 版，所以「启动后界面变中文」这步未验证。
 
-**macOS**：只有代码与单测（合成的 `Kiro.app/Contents/{Resources/app,MacOS/Kiro}` 布局），**没有实机**，也没有 Apple 机器可借。
+**macOS**：在 GitHub Actions 的 Apple 芯片 macOS runner（arm64）上实测——下载官方 `kiro-ide-1.4.154-stable-darwin-arm64.dmg`、`hdiutil` 挂载解包，对真实 `Kiro.app/Contents/Resources/app` 跑 `apply --no-restart --skip-nls`，结果：workbench/sessions 各 8 条、mermaid 22+22、HostCapabilities 4、额度自适应 3、extension 30、两个 manifest 30+3、style.css、asar 6 条，共 12 个 `.zhbak`，验收「菜单=文件 / 菜单=帮助 / 额度条」全 True。**未验证**：GUI 里中文的实际渲染（CI 无图形会话）、`osascript` 重启、语言包 NLS 烘焙（runner 上没装中文语言包）。
 
-非 Windows 首次使用建议先 `kiro-zh apply --dry-run` 看路径探测结果。
+本地 Mac 首次使用建议先 `kiro-zh apply --dry-run` 看路径探测结果。Docker 帮不上忙：容器只能跑 Linux 内核，macOS 既不能容器化也不许在非 Apple 硬件上虚拟化。
 
 额度百分比补丁依赖具体 minified 符号，换版本后可能未命中（脚本会提示，其余汉化不受影响）。其余字面量替换按内容匹配，版本容忍度较高。
 
