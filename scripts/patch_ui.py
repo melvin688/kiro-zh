@@ -43,7 +43,8 @@ def patch_text(path: Path, pairs: list[tuple[str, str]], label: str | None = Non
     if not path.exists():
         REPORT.append(("缺文件", name, 0, 0))
         return 0
-    text = io.open(path, encoding="utf-8", errors="surrogateescape").read()
+    with io.open(path, encoding="utf-8", errors="surrogateescape") as fh:
+        text = fh.read()
     orig = text
     done = miss = 0
     for old, new in pairs:
@@ -57,7 +58,8 @@ def patch_text(path: Path, pairs: list[tuple[str, str]], label: str | None = Non
             miss += 1
     if text != orig:
         _backup(path)
-        io.open(path, "w", encoding="utf-8", errors="surrogateescape", newline="").write(text)
+        with io.open(path, "w", encoding="utf-8", errors="surrogateescape", newline="") as fh:
+            fh.write(text)
     REPORT.append(("已改" if text != orig else "无变化", name, done, miss))
     return done
 

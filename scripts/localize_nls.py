@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import argparse
 import collections
-import io
 import json
 import shutil
 from pathlib import Path
 
 from kiro_paths import data_dir, enable_utf8, find_app_root, find_language_pack
+from io_util import dump_json, load_json, read_text, write_text
 
 CJK = lambda s: any("\u4e00" <= ch <= "\u9fff" for ch in s)  # noqa: E731
 
@@ -58,7 +58,7 @@ def bake_array(arr: list[str], mapping: dict[str, str]) -> int:
 
 
 def load_js_array(path: Path) -> tuple[str, str, list[str]]:
-    raw = io.open(path, encoding="utf-8").read()
+    raw = read_text(path)
     marker = "globalThis._VSCODE_NLS_MESSAGES="
     idx = raw.find(marker)
     if idx < 0:
@@ -75,8 +75,8 @@ def run(app: Path, dry_run: bool = False, clear_cache: bool = False) -> dict[str
         raise SystemExit("没找到简体中文语言包（ms-ceintl.vscode-language-pack-zh-hans）。请先在 Kiro 里装好中文语言包。")
     print(f"语言包：{pack}")
 
-    metadata = json.load(io.open(out / "nls.metadata.json", encoding="utf-8"))
-    contents = json.load(io.open(pack, encoding="utf-8"))["contents"]
+    metadata = load_json(out / "nls.metadata.json")
+    contents = load_json(pack)["contents"]
     mapping = build_map(metadata, contents)
     print(f"对照表：{len(mapping)} 条英文可译")
 
@@ -86,20 +86,19 @@ def run(app: Path, dry_run: bool = False, clear_cache: bool = False) -> dict[str
         if not path.exists():
             continue
         if name.endswith(".json"):
-            arr = json.load(io.open(path, encoding="utf-8"))
+            arr = load_json(path)
             n = bake_array(arr, mapping)
             if n and not dry_run:
                 shutil.copy2(path, path.with_suffix(path.suffix + ".zhbak"))
-                io.open(path, "w", encoding="utf-8", newline="").write(
-                    json.dumps(arr, ensure_ascii=False, separators=(",", ":"))
-                )
+                dump_json(path, arr, separators=(",", ":"))
         else:
             head, _tail, arr = load_js_array(path)
             n = bake_array(arr, mapping)
             if n and not dry_run:
                 shutil.copy2(path, path.with_suffix(path.suffix + ".zhbak"))
-                io.open(path, "w", encoding="utf-8", newline="").write(
-                    head + json.dumps(arr, ensure_ascii=False, separators=(",", ":")) + ";"
+                write_text(
+                    path,
+                    head + json.dumps(arr, ensure_ascii=False, separators=(",", ":")) + ";",
                 )
         pct = 100 * sum(1 for x in arr if CJK(x)) / len(arr)
         stats[name] = n

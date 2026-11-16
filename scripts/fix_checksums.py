@@ -19,6 +19,7 @@ import shutil
 from pathlib import Path
 
 from kiro_paths import enable_utf8, find_app_root
+from io_util import dump_json, load_json
 
 
 def digest(path: Path) -> str:
@@ -27,7 +28,7 @@ def digest(path: Path) -> str:
 
 def run(app: Path) -> list[tuple[str, str, str]]:
     product_path = app / "product.json"
-    product = json.load(io.open(product_path, encoding="utf-8"))
+    product = load_json(product_path)
     checksums = product.get("checksums") or {}
     if not checksums:
         print("product.json 没有 checksums 字段，无需处理")
@@ -46,9 +47,7 @@ def run(app: Path) -> list[tuple[str, str, str]]:
 
     if changes:
         shutil.copy2(product_path, product_path.with_suffix(".json.zhbak"))
-        io.open(product_path, "w", encoding="utf-8", newline="").write(
-            json.dumps(product, ensure_ascii=False, indent=2)
-        )
+        dump_json(product_path, product, indent=2)
         for key, old, new in changes:
             print(f"更新校验值 {key}  {old}… -> {new}…")
     else:

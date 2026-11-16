@@ -23,6 +23,7 @@ import fix_checksums
 import localize_nls
 import patch_ui
 from kiro_paths import data_dir, enable_utf8, find_app_root
+from io_util import load_json
 
 WELCOME_ENTRY = "@kiro/sign-in-page/dist/index.js"
 
@@ -34,7 +35,7 @@ def patch_welcome(app: Path) -> int:
     if not asar.exists() or not mapping_path.exists():
         print("  跳过：找不到 node_modules.asar 或文案表")
         return 0
-    mapping = json.load(io.open(mapping_path, encoding="utf-8"))
+    mapping = load_json(mapping_path)
     return asar_tool.apply_map(asar, WELCOME_ENTRY, mapping)
 
 

@@ -15,6 +15,8 @@ jobs:
           python-version: "3.12"
       - name: 语法检查（全部脚本）
         run: python -c "import compileall,sys; sys.exit(0 if compileall.compile_dir('scripts', quiet=1) else 1)"
+      - name: 单元测试（离线）
+        run: python -m unittest discover -s tests -v
       - name: 命令行参数自检
         run: |
           python scripts/apply.py --help

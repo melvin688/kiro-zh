@@ -22,6 +22,8 @@ import re
 import shutil
 from pathlib import Path
 
+from io_util import load_json
+
 LITERAL = re.compile(rb'(?:children|label|title|placeholder|description|aria-label|alt):"([^"]{2,120})"')
 
 
@@ -113,7 +115,7 @@ def apply_map(asar: Path, entry_suffix: str, mapping: dict[str, str]) -> int:
 
 def cmd_patch(args) -> None:
     asar = Path(args.asar)
-    mapping: dict[str, str] = json.load(io.open(args.map, encoding="utf-8"))
+    mapping: dict[str, str] = load_json(args.map)
     apply_map(asar, args.entry, mapping)
 
 

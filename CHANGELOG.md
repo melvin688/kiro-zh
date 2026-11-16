@@ -5,6 +5,8 @@
 - 补译聊天面板：`See all`、`(optional)`、`New Session`、`Plan` 及其描述、响应风格 `Default`。
 - 重启步骤除 `clp` 外一并清理 `Cache` / `Code Cache` / `GPUCache`，避免 webview 继续用旧 bundle。
 - README 增加实机截图（空项目截取，无个人信息）。
+- 新增 `scripts/io_util.py`：所有写文件走 `with`，避免写完立刻重启时缓冲未落盘。
+- 新增 `tests/test_core.py`（6 条离线用例）并接入 CI。
 
 ## 0.2.0 — 2026-11-16
 
