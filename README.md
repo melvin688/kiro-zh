@@ -1,5 +1,7 @@
 # kiro-zh · Kiro 界面汉化
 
+![ci](https://github.com/melvin688/kiro-zh/actions/workflows/ci.yml/badge.svg)
+
 把 [Kiro](https://kiro.dev) IDE 的自绘界面（聊天面板、设置项、状态栏、权限模式、内置模式、额度条）改成简体中文，并可选给额度加上百分比与进度条。纯本地脚本，只改展示字符串，不动账号数据与业务逻辑。
 
 **非官方项目**，与 Kiro / AWS 无关。改的是安装目录里的文件，Kiro 升级会覆盖，升级后重跑一次即可。
@@ -83,6 +85,21 @@ Kiro 的界面文案有三个来源，只改一处不够：
 - 改 `out/` 下被校验的文件会触发完整性告警，已在同一流程里回填 `product.json` 校验值。
 - 后端/模型生成的内容不受本工具控制：工具调用摘要（`3 tool calls`）、会话标题可能是英文。仓库附带 `assets/steering/zh-ui.md`，作为 Kiro 全局 steering 让生成的标题与摘要走中文。
 - 不支持 macOS / Linux（路径探测与重启逻辑是 Windows 的，欢迎 PR）。
+
+## English
+
+`kiro-zh` localizes the self‑drawn UI of the [Kiro](https://kiro.dev) IDE — chat panel, settings descriptions, status bar, approval modes, built‑in modes, usage meter and welcome page — into Simplified Chinese, and optionally adds a percentage plus progress bar to the usage meter.
+
+Unofficial, not affiliated with Kiro or AWS. It rewrites strings inside the install directory, so a Kiro update restores the English UI; just re‑run the script afterwards.
+
+Requirements: Windows, Kiro installed, `ms-ceintl.vscode-language-pack-zh-hans`, Python 3.9+.
+
+```bash
+python scripts/apply.py --dry-run    # probe paths, write nothing
+python scripts/apply.py              # patch, bake NLS, fix checksums, restart
+python scripts/verify.py             # smoke check
+python scripts/restore.py --restore  # roll back from .zhbak files
+```
 
 ## 兼容版本
 

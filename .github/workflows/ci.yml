@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 语法检查（全部脚本）
+        run: python -c "import compileall,sys; sys.exit(0 if compileall.compile_dir('scripts', quiet=1) else 1)"
+      - name: 命令行参数自检
+        run: |
+          python scripts/apply.py --help
+          python scripts/asar_tool.py --help
+          python scripts/restore.py --help
