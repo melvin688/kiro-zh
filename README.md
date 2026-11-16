@@ -73,13 +73,29 @@ python scripts/restore.py --app "<同上>" --restore  # 执行回滚
 | `scripts/localize_nls.py` | 把语言包中文烘焙进 `out/nls.messages.json/.js`，并清理 `%APPDATA%/Kiro/clp` 缓存 |
 | `scripts/fix_checksums.py` | 重算 `product.json` 校验值，消除「安装似乎损坏」告警 |
 | `scripts/asar_tool.py` | 读写 `node_modules.asar`：列可见文案、做等长字节替换（欢迎页/登录页） |
-| `scripts/translate_missing.py` | 导出语言包缺失条目为分块、合并回译文（占位符校验） |
+| `scripts/translate_missing.py` | `chunks` 导出缺失条目 / `auto` 调 OpenAI 兼容接口批量翻译 / `merge` 合并回语言包（占位符校验） |
 | `scripts/restore.py` | 按 `.zhbak` 备份回滚 |
 | `scripts/verify.py` | 冒烟验收：关键中文串是否在位 + `node --check` 语法检查 |
 | `packaging/kiro_zh.py` | 单文件入口：`apply` / `verify` / `restore`，PyInstaller 打包用 |
 | `packaging/build.ps1` | 本机打包 `dist/kiro-zh.exe`（uv + Python 3.12 + PyInstaller） |
 
 常用参数：`--dry-run` 只探测、`--no-restart` 不重启、`--skip-nls` 只改字面量、`--skip-ui` 只做 NLS。
+
+## 补齐语言包缺失条目
+
+Kiro 自带的中文语言包覆盖不到它自己新增的设置说明和命令描述。脚本能把缺失条目找出来，调任意 OpenAI 兼容接口批量翻译，再写回语言包。
+
+```bash
+export KIRO_ZH_API_KEY=sk-...                    # 也认 DEEPSEEK_API_KEY / OPENAI_API_KEY
+python scripts/translate_missing.py auto --out ./work      # 默认 DeepSeek
+python scripts/translate_missing.py auto --api-url http://127.0.0.1:8000/v1 --model qwen2.5-14b
+python scripts/translate_missing.py merge --out ./work     # 写回语言包，自动备份 .zhbak
+python scripts/apply.py                                    # 烘焙 NLS + 重启
+```
+
+- 按约 6000 字符切块、默认 4 并发；已有 `nls_out_*.json` 的块直接跳过，可断点续跑，`--limit N` 控制本轮只译几块。
+- 每块校验占位符（`{0}` `%s` `$(icon)` `${var}` `<tag>`）与空值，不合格的条目带错误信息重发一次，仍不合格就不写入。
+- 不调 API 也能用：`chunks` 导出 `nls_chunk_*.json` + `RULES.txt`，人工或别的工具译好后另存 `nls_out_<n>.json`，再走 `merge`。
 
 ## 为什么需要两套汉化
 
@@ -119,6 +135,8 @@ python scripts/restore.py --restore  # roll back from .zhbak files
 
 已实测：Kiro **1.4.178**（内嵌 VS Code 1.131.0），Windows 11。
 
+macOS / Linux 已按平台补了路径探测（`/Applications/Kiro.app/Contents/Resources/app`、`/usr/share/kiro/resources/app`、`/opt/*/resources/app`、`~/.local/share/kiro/...`）、数据目录（`~/Library/Application Support/Kiro`、`$XDG_CONFIG_HOME/Kiro`）与重启逻辑（`osascript`/`pkill` + `open`），并有离线单测覆盖路径判定；**但没有实机跑过**，首次使用建议先 `--dry-run`。
+
 额度百分比补丁依赖具体 minified 符号，换版本后可能未命中（脚本会提示，其余汉化不受影响）。其余字面量替换按内容匹配，版本容忍度较高。
 
 ## 开发
@@ -133,9 +151,9 @@ python scripts/verify.py              # 汉化体检
 路线图：
 
 - [x] 版本自适应：额度函数按 `Bonus` / `currentOverages` 锚点 + 模板正则定位，Kiro 升级重命名符号后仍能命中
-- [ ] 差额翻译自动补全（接任意 LLM 批量译 `translate_missing.py chunks` 的产物）
+- [x] 差额翻译自动补全：`translate_missing.py auto` 调 OpenAI 兼容接口批量译缺失条目，占位符校验 + 失败重试，再 `merge` 回语言包
 - [x] PyInstaller 打包成单文件 exe，免装 Python（`packaging/`，Release 附件）
-- [ ] Linux / macOS 支持
+- [x] Linux / macOS 支持：路径探测、数据目录、重启逻辑按平台分支（离线单测覆盖，未实机验证）
 
 ## 许可
 

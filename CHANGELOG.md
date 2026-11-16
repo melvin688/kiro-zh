@@ -1,5 +1,14 @@
 # 变更记录
 
+## 0.5.0 — 2026-11-16
+
+- `translate_missing.py` 新增 `auto` 子命令：调 OpenAI 兼容接口（默认 DeepSeek）批量翻译语言包缺失条目，按约 6000 字符切块、默认 4 并发、已翻好的块跳过可续跑。
+- 翻译结果逐条校验占位符与空值，不合格条目带错误重发一次；仍不合格就不写入。
+- `merge` 抽成 `merge_out()`，`auto` 之后可直接接 `merge` 写回语言包并备份 `.zhbak`。
+- 跨平台：`kiro_paths` 增加 macOS（`.app/Contents/Resources/app`、`~/Library/Application Support/Kiro`）与 Linux（`/usr/share|/opt|~/.local/share`、`$XDG_CONFIG_HOME/Kiro`）探测，语言包查找加 `~/.vscode-server`、`~/.cursor`。
+- `apply.py` 重启逻辑按平台分支：macOS 用 `osascript`/`pkill` + `open -a`，Linux 用 `pkill` + `Popen(start_new_session)`，Windows 保持 `taskkill` + `startfile`。
+- 单测 9 → 17 条：切块预算、JSON 围栏解析、占位符校验、本地假 OpenAI 服务往返与重试、三平台路径断言。
+
 ## 0.4.0 — 2026-11-16
 
 - 新增 PyInstaller 单文件版：`dist/kiro-zh.exe`（约 8 MB），`apply` / `verify` / `restore` 三个子命令，免装 Python。

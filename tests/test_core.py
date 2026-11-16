@@ -14,8 +14,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import asar_tool  # noqa: E402
+import kiro_paths  # noqa: E402
 import localize_nls  # noqa: E402
 import patch_ui  # noqa: E402
+import translate_missing  # noqa: E402
 
 
 class PatchTextTest(unittest.TestCase):
@@ -117,6 +119,107 @@ class QuotaAdaptiveTest(unittest.TestCase):
     def test_missing_markers_left_alone(self):
         text = 'const a=1;'
         self.assertEqual(patch_ui.fix_quota_adaptive(text), (text, 0))
+
+
+class TranslatePipelineTest(unittest.TestCase):
+    def test_build_chunks_respects_budget(self):
+        missing = {"m": {f"k{i}": "x" * 100 for i in range(50)}}
+        chunks = translate_missing.build_chunks(missing, budget=800)
+        self.assertGreater(len(chunks), 1)
+        self.assertEqual(sum(len(v) for c in chunks for v in c.values()), 50)
+
+    def test_parse_reply_tolerates_fences(self):
+        self.assertEqual(
+            translate_missing.parse_reply('```json\n{"a": {"b": "中"}}\n```'), {"a": {"b": "中"}}
+        )
+        self.assertEqual(translate_missing.parse_reply('好的：{"a":{}}'), {"a": {}})
+
+    def test_validate_flags_placeholder_and_empty(self):
+        chunk = {"m": {"k1": "Open {0} now", "k2": "Close", "k3": "Help"}}
+        out = {"m": {"k1": "打开 now", "k2": "", "k3": "帮助"}}
+        good, bad = translate_missing.validate(chunk, out)
+        self.assertEqual(list(good["m"]), ["k3"])
+        self.assertEqual(sorted(bad), ["m::k1", "m::k2"])
+
+
+class TranslateHTTPTest(unittest.TestCase):
+    """起一个本地假 OpenAI 服务，验证协议层与重试，不花真 token。"""
+
+    def setUp(self):
+        import http.server
+        import threading
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            calls = 0
+            fail_first = False
+
+            def log_message(self, *a):  # 静音
+                pass
+
+            def do_POST(self):
+                type(self).calls += 1
+                n = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(n))
+                chunk = json.loads(body["messages"][1]["content"])
+                out = {m: {k: "中:" + v for k, v in kv.items()} for m, kv in chunk.items()}
+                if type(self).fail_first and type(self).calls == 1:
+                    for kv in out.values():  # 首轮故意吃掉占位符，触发重试
+                        for k in kv:
+                            kv[k] = "坏的"
+                payload = json.dumps({"choices": [{"message": {"content": "```json\n" + json.dumps(out, ensure_ascii=False) + "\n```"}}]})
+                raw = payload.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+
+        self.handler = Handler
+        self.server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}/v1"
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+    def test_translate_chunk_roundtrip(self):
+        chunk = {"m": {"k": "Open {0}"}}
+        out = translate_missing.translate_chunk(chunk, self.url, "fake", "k", retries=0)
+        self.assertEqual(out["m"]["k"], "中:Open {0}")
+
+    def test_retry_after_bad_placeholders(self):
+        self.handler.calls = 0
+        self.handler.fail_first = True
+        chunk = {"m": {"k": "Open {0}"}}
+        out = translate_missing.translate_chunk(chunk, self.url, "fake", "k", retries=1)
+        self.assertEqual(out["m"]["k"], "中:Open {0}")
+        self.assertGreaterEqual(self.handler.calls, 2)
+
+
+class PlatformTest(unittest.TestCase):
+    def test_windows_globs(self):
+        self.assertTrue(any("Programs" in g for g in kiro_paths._platform_app_globs()))
+
+    def test_darwin_paths(self):
+        from unittest import mock
+
+        with mock.patch.object(kiro_paths.sys, "platform", "darwin"):
+            globs = kiro_paths._platform_app_globs()
+            self.assertTrue(any(g.endswith("/Contents/Resources/app") for g in globs))
+            self.assertEqual(
+                kiro_paths.data_dir().parts[-3:],
+                ("Library", "Application Support", "Kiro"),
+            )
+
+    def test_linux_paths(self):
+        from unittest import mock
+
+        with mock.patch.object(kiro_paths.sys, "platform", "linux"):
+            globs = kiro_paths._platform_app_globs()
+            self.assertIn("/usr/share/*iro*/resources/app", globs)
+            self.assertEqual(kiro_paths.data_dir().name, "Kiro")
 
 
 if __name__ == "__main__":

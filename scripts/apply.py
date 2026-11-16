@@ -40,30 +40,78 @@ def patch_welcome(app: Path) -> int:
 
 
 def exe_path(app: Path) -> Path | None:
+    if sys.platform == "darwin":
+        # .../Kiro.app/Contents/Resources/app  ->  .../Kiro.app/Contents/MacOS/Kiro
+        macos = app.parent.parent / "MacOS"
+        for name in ("Kiro", "kiro"):
+            cand = macos / name
+            if cand.exists():
+                return cand
+        hits = sorted(p for p in macos.glob("*") if p.is_file())
+        return hits[0] if hits else None
+
     install = app.parent.parent
-    for name in ("Kiro.exe", "kiro.exe"):
+    names = ("kiro", "Kiro") if sys.platform.startswith("linux") else ("Kiro.exe", "kiro.exe")
+    for name in names:
         cand = install / name
         if cand.exists():
             return cand
-    hits = sorted(install.glob("*.exe"))
+    hits = sorted(install.glob("*.exe")) if os.name == "nt" else sorted(install.glob("*iro*"))
     return hits[0] if hits else None
 
 
-def restart(app: Path) -> None:
-    exe = exe_path(app)
-    if not exe:
-        print("没找到 Kiro.exe，跳过重启，请手动启动")
-        return
-    subprocess.run(["taskkill", "/IM", exe.name], capture_output=True, text=True)
-    time.sleep(6)
-    # clp 是 NLS 文案缓存；Cache / Code Cache 是 webview 的 JS 缓存。
-    # 只清 clp 时，改过的聊天面板 bundle 可能仍从缓存读旧字节。
+def _clear_cache() -> None:
+    """clp 是 NLS 文案缓存；Cache / Code Cache 是 webview 的 JS 缓存。
+    只清 clp 时，改过的聊天面板 bundle 可能仍从缓存读旧字节。
+    """
     import shutil
 
     for name in ("clp", "Cache", "Code Cache", "GPUCache"):
         cache = data_dir() / name
         if cache.exists():
             shutil.rmtree(cache, ignore_errors=True)
+
+
+def _run_quiet(cmd: list[str]) -> None:
+    try:
+        subprocess.run(cmd, capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def restart(app: Path) -> None:
+    exe = exe_path(app)
+    if not exe:
+        print("没找到 Kiro 可执行文件，跳过重启，请手动启动")
+        return
+
+    if sys.platform == "darwin":
+        _run_quiet(["osascript", "-e", 'quit app "Kiro"'])
+        time.sleep(4)
+        _run_quiet(["pkill", "-f", "Kiro.app/Contents/MacOS"])
+        time.sleep(2)
+        _clear_cache()
+        _run_quiet(["open", "-a", "Kiro"])
+        print(f"已重启：{exe}")
+        return
+
+    if sys.platform.startswith("linux"):
+        _run_quiet(["pkill", "-x", exe.name])
+        _run_quiet(["pkill", "-f", str(exe)])
+        time.sleep(4)
+        _clear_cache()
+        subprocess.Popen(
+            [str(exe)],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        print(f"已重启：{exe}")
+        return
+
+    subprocess.run(["taskkill", "/IM", exe.name], capture_output=True, text=True)
+    time.sleep(6)
+    _clear_cache()
     os.startfile(str(exe))  # noqa: S606 - 需要以桌面应用方式启动
     print(f"已重启：{exe}")
 

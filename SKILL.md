@@ -27,7 +27,15 @@ python scripts/apply.py --dry-run          # 先看路径对不对
 python scripts/apply.py                    # 汉化并重启
 python scripts/restore.py --restore        # 回滚
 python scripts/verify.py                   # 验收
+
+# 语言包缺条目（Kiro 自己新增的设置说明）
+export KIRO_ZH_API_KEY=sk-...
+python scripts/translate_missing.py auto --out ./work
+python scripts/translate_missing.py merge --out ./work
+python scripts/apply.py
 ```
+
+macOS / Linux 的路径与重启逻辑已按平台分支，但只在 Windows 实机验证过；非 Windows 首次先 `--dry-run`。
 
 ## 铁律
 

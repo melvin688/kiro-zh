@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 APP_HINT_ENV = "KIRO_APP"
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 
 def assets_dir() -> Path:
@@ -33,19 +33,45 @@ def enable_utf8() -> None:
             pass
 
 
+def _platform_app_globs() -> list[str]:
+    """各平台 Kiro 安装位置的 glob（大小写不敏感：*iro* 同时命中 Kiro / kiro）。"""
+    home = os.path.expanduser("~")
+    if sys.platform == "darwin":
+        return [
+            "/Applications/*iro*.app/Contents/Resources/app",
+            f"{home}/Applications/*iro*.app/Contents/Resources/app",
+        ]
+    if sys.platform.startswith("linux"):
+        return [
+            "/usr/share/*iro*/resources/app",
+            "/usr/lib/*iro*/resources/app",
+            "/opt/*iro*/resources/app",
+            "/opt/*iro*/*/resources/app",
+            f"{home}/.local/share/*iro*/resources/app",
+        ]
+    # Windows：用户级安装优先，其次是 Program Files 与 APPDATA
+    out: list[str] = []
+    for base in filter(
+        None,
+        (
+            os.environ.get("LOCALAPPDATA", ""),
+            os.environ.get("PROGRAMFILES", ""),
+            os.environ.get("PROGRAMFILES(X86)", ""),
+            os.environ.get("APPDATA", ""),
+        ),
+    ):
+        out.append(os.path.join(base, "Programs", "*iro*", "resources", "app"))
+        out.append(os.path.join(base, "*iro*", "resources", "app"))
+    return out
+
+
 def _candidates() -> list[Path]:
     out: list[Path] = []
     env = os.environ.get(APP_HINT_ENV)
     if env:
         out.append(Path(env))
-    local = os.environ.get("LOCALAPPDATA", "")
-    roaming = os.environ.get("APPDATA", "")
-    for base in filter(None, (local, os.environ.get("PROGRAMFILES", ""), os.environ.get("PROGRAMFILES(X86)", ""))):
-        for pattern in ("Programs/*iro*/resources/app", "*iro*/resources/app"):
-            out.extend(Path(p) for p in glob.glob(os.path.join(base, pattern)))
-    # 少数安装方式把程序放在 APPDATA 下
-    if roaming:
-        out.extend(Path(p) for p in glob.glob(os.path.join(roaming, "*iro*", "resources", "app")))
+    for pattern in _platform_app_globs():
+        out.extend(Path(p) for p in glob.glob(pattern))
     return out
 
 
@@ -95,7 +121,16 @@ def user_dir() -> Path:
 
 
 def data_dir() -> Path:
-    """%APPDATA%/Kiro（logs、clp 缓存、languagepacks.json）。"""
+    """Kiro 的用户数据目录（logs、clp 缓存、languagepacks.json）。
+
+    Windows: %APPDATA%/Kiro；macOS: ~/Library/Application Support/Kiro；
+    Linux: $XDG_CONFIG_HOME/Kiro 或 ~/.config/Kiro。
+    """
+    if sys.platform == "darwin":
+        return Path(os.path.expanduser("~")) / "Library" / "Application Support" / "Kiro"
+    if sys.platform.startswith("linux"):
+        base = os.environ.get("XDG_CONFIG_HOME") or str(Path(os.path.expanduser("~")) / ".config")
+        return Path(base) / "Kiro"
     roaming = os.environ.get("APPDATA")
     if roaming:
         return Path(roaming) / "Kiro"
@@ -104,7 +139,13 @@ def data_dir() -> Path:
 
 def find_language_pack(locale: str = "zh-hans") -> Path | None:
     """找简体中文语言包的 main.i18n.json。"""
-    roots = [user_dir() / "extensions", Path(os.path.expanduser("~")) / ".vscode" / "extensions"]
+    home = Path(os.path.expanduser("~"))
+    roots = [
+        user_dir() / "extensions",
+        home / ".vscode" / "extensions",
+        home / ".vscode-server" / "extensions",  # 远程开发
+        home / ".cursor" / "extensions",
+    ]
     for root in roots:
         hits = sorted(glob.glob(str(root / f"*language-pack-{locale}*" / "translations" / "main.i18n.json")))
         if hits:
