@@ -22,7 +22,7 @@ import asar_tool
 import fix_checksums
 import localize_nls
 import patch_ui
-from kiro_paths import data_dir, enable_utf8, find_app_root
+from kiro_paths import assets_dir, data_dir, enable_utf8, find_app_root
 from io_util import load_json
 
 WELCOME_ENTRY = "@kiro/sign-in-page/dist/index.js"
@@ -31,7 +31,7 @@ WELCOME_ENTRY = "@kiro/sign-in-page/dist/index.js"
 def patch_welcome(app: Path) -> int:
     """欢迎页 / 登录页在 node_modules.asar 里，用等长替换处理。"""
     asar = app / "node_modules.asar"
-    mapping_path = Path(__file__).resolve().parent.parent / "assets" / "asar-welcome-zh.json"
+    mapping_path = assets_dir() / "asar-welcome-zh.json"
     if not asar.exists() or not mapping_path.exists():
         print("  跳过：找不到 node_modules.asar 或文案表")
         return 0

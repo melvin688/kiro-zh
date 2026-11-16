@@ -48,7 +48,13 @@ def _node(suffix: str, path: Path) -> subprocess.CompletedProcess:
         tmp = Path(fh.name)
     shutil.copy2(path, tmp)
     try:
-        return subprocess.run([node, "--check", str(tmp)], capture_output=True, text=True)
+        return subprocess.run(
+            [node, "--check", str(tmp)],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=120,
+        )
     finally:
         tmp.unlink(missing_ok=True)
 

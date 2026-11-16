@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.venv-build/
+
+# PyInstaller 产物
+dist/
+build/
+*.spec
 
 # 工作目录（translate_missing.py 产物）
 work/

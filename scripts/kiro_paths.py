@@ -11,6 +11,18 @@ import sys
 from pathlib import Path
 
 APP_HINT_ENV = "KIRO_APP"
+__version__ = "0.4.0"
+
+
+def assets_dir() -> Path:
+    """资产目录：源码运行时是仓库根/assets，打包成 exe 后在解包临时目录。"""
+    local = Path(__file__).resolve().parent.parent / "assets"
+    if local.is_dir():
+        return local
+    bundled = getattr(sys, "_MEIPASS", None)
+    if bundled:
+        return Path(bundled) / "assets"
+    return local
 
 
 def enable_utf8() -> None:

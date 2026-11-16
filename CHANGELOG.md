@@ -1,5 +1,13 @@
 # 变更记录
 
+## 0.4.0 — 2026-11-16
+
+- 新增 PyInstaller 单文件版：`dist/kiro-zh.exe`（约 8 MB），`apply` / `verify` / `restore` 三个子命令，免装 Python。
+- 打包后资产路径走 `sys._MEIPASS`，asar 欢迎页文案表在 exe 里同样可用。
+- 资产目录统一收到 `kiro_paths.assets_dir()`。
+- CI 增加 `release` 作业：推 `v*` 标签自动打包并附到 GitHub Release。
+- 修 `verify.py` 的 `node --check` 在非 UTF-8 控制台下解码崩溃（改成显式 utf-8 + 120s 超时）。
+
 ## 0.3.0 — 2026-11-16
 
 - 额度补丁增加版本自适应回退：精确串失配时，改按稳定文案与接口字段定位，在函数体窗口内用正则改写「赠送 / 超额 / 主额度」三处模板。

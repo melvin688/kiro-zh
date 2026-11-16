@@ -31,6 +31,18 @@
 
 前置：Windows，已装 Kiro，已装简体中文语言包（`ms-ceintl.vscode-language-pack-zh-hans`），Python 3.9+。
 
+不想装 Python 就用 Release 里的单文件版：
+
+```text
+kiro-zh.exe            双击 → 回车开始汉化
+kiro-zh.exe verify     验收
+kiro-zh.exe restore --list / --restore   回滚
+```
+
+首次运行会被 SmartScreen 拦截（未签名）：更多信息 → 仍要运行。
+
+源码方式：
+
 ```bash
 # 1. 预演：只探测路径，不写文件
 python scripts/apply.py --dry-run
@@ -64,6 +76,8 @@ python scripts/restore.py --app "<同上>" --restore  # 执行回滚
 | `scripts/translate_missing.py` | 导出语言包缺失条目为分块、合并回译文（占位符校验） |
 | `scripts/restore.py` | 按 `.zhbak` 备份回滚 |
 | `scripts/verify.py` | 冒烟验收：关键中文串是否在位 + `node --check` 语法检查 |
+| `packaging/kiro_zh.py` | 单文件入口：`apply` / `verify` / `restore`，PyInstaller 打包用 |
+| `packaging/build.ps1` | 本机打包 `dist/kiro-zh.exe`（uv + Python 3.12 + PyInstaller） |
 
 常用参数：`--dry-run` 只探测、`--no-restart` 不重启、`--skip-nls` 只改字面量、`--skip-ui` 只做 NLS。
 
@@ -120,7 +134,7 @@ python scripts/verify.py              # 汉化体检
 
 - [x] 版本自适应：额度函数按 `Bonus` / `currentOverages` 锚点 + 模板正则定位，Kiro 升级重命名符号后仍能命中
 - [ ] 差额翻译自动补全（接任意 LLM 批量译 `translate_missing.py chunks` 的产物）
-- [ ] PyInstaller 打包成单文件 exe，免装 Python
+- [x] PyInstaller 打包成单文件 exe，免装 Python（`packaging/`，Release 附件）
 - [ ] Linux / macOS 支持
 
 ## 许可
