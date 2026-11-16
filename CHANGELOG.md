@@ -1,5 +1,12 @@
 # 变更记录
 
+## 0.6.1 — 2026-11-16
+
+- 单测 17 → 21 条：新增 macOS / Linux 的 `exe_path()` 定位、找不到二进制返回 `None`、`_clear_cache()` 只清缓存目录。
+- `test_windows_globs` 改为 mock 平台与环境变量，不再依赖真实 Windows 环境变量，可在 Linux 上跑。
+- CI 增加 `linux` 作业（ubuntu-latest）：语法检查 + 21 条单测，持续验证 Linux 分支。
+- 验证方式补记：WSL2 Ubuntu 24.04 上用宿主英文原件的副本跑完整替换链，57 条命中、3 个 `.zhbak`、路径与数据目录定位正确；macOS 仍无实机。
+
 ## 0.6.0 — 2026-11-16
 
 - exe 增加 `translate` 子命令：不带参数时进入交互向导（提示粘贴 key → `auto` → `merge` → 可选立即烘焙重启），`kiro-zh translate auto|merge` 走命令行。

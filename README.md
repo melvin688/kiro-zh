@@ -136,7 +136,11 @@ python scripts/restore.py --restore  # roll back from .zhbak files
 
 已实测：Kiro **1.4.178**（内嵌 VS Code 1.131.0），Windows 11。
 
-macOS / Linux 已按平台补了路径探测（`/Applications/Kiro.app/Contents/Resources/app`、`/usr/share/kiro/resources/app`、`/opt/*/resources/app`、`~/.local/share/kiro/...`）、数据目录（`~/Library/Application Support/Kiro`、`$XDG_CONFIG_HOME/Kiro`）与重启逻辑（`osascript`/`pkill` + `open`），并有离线单测覆盖路径判定；**但没有实机跑过**，首次使用建议先 `--dry-run`。
+**Linux**：在 WSL2 Ubuntu 24.04（Python 3.12）上跑通 21 条单测，并用宿主的英文原件副本走完整替换链——57 条命中、3 个 `.zhbak` 生成、`find_app_root` / `exe_path` / `data_dir`（`$XDG_CONFIG_HOME/Kiro`）都定位正确。没有装 Kiro 的 Linux 版，所以「启动后界面变中文」这步未验证。
+
+**macOS**：只有代码与单测（合成的 `Kiro.app/Contents/{Resources/app,MacOS/Kiro}` 布局），**没有实机**，也没有 Apple 机器可借。
+
+非 Windows 首次使用建议先 `kiro-zh apply --dry-run` 看路径探测结果。
 
 额度百分比补丁依赖具体 minified 符号，换版本后可能未命中（脚本会提示，其余汉化不受影响）。其余字面量替换按内容匹配，版本容忍度较高。
 
@@ -154,7 +158,7 @@ python scripts/verify.py              # 汉化体检
 - [x] 版本自适应：额度函数按 `Bonus` / `currentOverages` 锚点 + 模板正则定位，Kiro 升级重命名符号后仍能命中
 - [x] 差额翻译自动补全：`translate_missing.py auto` 调 OpenAI 兼容接口批量译缺失条目，占位符校验 + 失败重试，再 `merge` 回语言包
 - [x] PyInstaller 打包成单文件 exe，免装 Python（`packaging/`，Release 附件）
-- [x] Linux / macOS 支持：路径探测、数据目录、重启逻辑按平台分支（离线单测覆盖，未实机验证）
+- [x] Linux / macOS 支持：路径探测、数据目录、重启逻辑按平台分支；Linux 在 WSL2 上跑了单测与整链替换，macOS 仅单测（无实机）
 
 ## 许可
 

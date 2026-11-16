@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 APP_HINT_ENV = "KIRO_APP"
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 
 def assets_dir() -> Path:

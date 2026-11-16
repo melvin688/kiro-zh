@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import asar_tool  # noqa: E402
+import apply  # noqa: E402
 import kiro_paths  # noqa: E402
 import localize_nls  # noqa: E402
 import patch_ui  # noqa: E402
@@ -200,7 +201,20 @@ class TranslateHTTPTest(unittest.TestCase):
 
 class PlatformTest(unittest.TestCase):
     def test_windows_globs(self):
-        self.assertTrue(any("Programs" in g for g in kiro_paths._platform_app_globs()))
+        from unittest import mock
+
+        env = {
+            "LOCALAPPDATA": "/x/Local",
+            "PROGRAMFILES": "/x/PF",
+            "PROGRAMFILES(X86)": "",
+            "APPDATA": "/x/Roaming",
+        }
+        with mock.patch.object(kiro_paths.sys, "platform", "win32"), mock.patch.dict(
+            kiro_paths.os.environ, env, clear=False
+        ):
+            globs = kiro_paths._platform_app_globs()
+        self.assertTrue(any("Programs" in g for g in globs))
+        self.assertEqual(len(globs), 6)  # LOCALAPPDATA / PROGRAMFILES / APPDATA 各两条
 
     def test_darwin_paths(self):
         from unittest import mock
@@ -220,6 +234,52 @@ class PlatformTest(unittest.TestCase):
             globs = kiro_paths._platform_app_globs()
             self.assertIn("/usr/share/*iro*/resources/app", globs)
             self.assertEqual(kiro_paths.data_dir().name, "Kiro")
+
+
+class RestartTest(unittest.TestCase):
+    """macOS / Linux 的定位与清理分支（没有实机，用合成布局 + 平台 mock 覆盖）。"""
+
+    def test_exe_path_darwin(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as d:
+            app = Path(d) / "Kiro.app" / "Contents" / "Resources" / "app"
+            app.mkdir(parents=True)
+            exe = app.parent.parent / "MacOS" / "Kiro"
+            exe.parent.mkdir()
+            exe.write_text("#!/bin/sh\n", encoding="utf-8")
+            with mock.patch.object(apply.sys, "platform", "darwin"):
+                self.assertEqual(apply.exe_path(app), exe)
+
+    def test_exe_path_linux(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as d:
+            install = Path(d) / "kiro"
+            app = install / "resources" / "app"
+            app.mkdir(parents=True)
+            exe = install / "kiro"
+            exe.write_text("#!/bin/sh\n", encoding="utf-8")
+            with mock.patch.object(apply.sys, "platform", "linux"):
+                self.assertEqual(apply.exe_path(app), exe)
+
+    def test_exe_path_missing_returns_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            app = Path(d) / "kiro" / "resources" / "app"
+            app.mkdir(parents=True)
+            self.assertIsNone(apply.exe_path(app))
+
+    def test_clear_cache_removes_admin_dirs(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as d:
+            for name in ("clp", "Cache", "Code Cache", "GPUCache", "keep"):
+                (Path(d) / name).mkdir()
+                (Path(d) / name / "x.txt").write_text("x", encoding="utf-8")
+            with mock.patch.object(apply, "data_dir", lambda: Path(d)):
+                apply._clear_cache()
+            left = sorted(p.name for p in Path(d).iterdir())
+        self.assertEqual(left, ["keep"])
 
 
 if __name__ == "__main__":
