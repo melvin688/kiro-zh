@@ -31,7 +31,7 @@
 
 前置：Windows，已装 Kiro，已装简体中文语言包（`ms-ceintl.vscode-language-pack-zh-hans`），Python 3.9+。
 
-不想装 Python 就用 Release 里的单文件版：
+不想装 Python 就用 Release 里的单文件版（[下载最新版](https://github.com/melvin688/kiro-zh/releases/latest)）：
 
 ```text
 kiro-zh.exe            双击 → 回车开始汉化
