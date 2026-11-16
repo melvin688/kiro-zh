@@ -8,7 +8,24 @@ from __future__ import annotations
 
 import io
 import json
+import sys
 from pathlib import Path
+
+
+def safe_console() -> None:
+    """把 stdout/stderr 切到 UTF-8。
+
+    脚本输出大量中文，在英文版 Windows（cp1252）或 CI 上直接 print 会抛
+    UnicodeEncodeError 而不是降级成问号，所以导入本模块即切换。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+safe_console()
 
 
 def read_text(path: Path | str) -> str:

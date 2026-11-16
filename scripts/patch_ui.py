@@ -26,6 +26,8 @@ from kiro_paths import (
     session_dist,
 )
 
+import io_util  # noqa: E402,F401  导入即把控制台切到 UTF-8
+
 # ---------------------------------------------------------------- 替换工具
 
 REPORT: list[tuple[str, str, int, int]] = []  # (状态, 文件, 替换数, 未命中数)

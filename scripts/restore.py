@@ -11,6 +11,7 @@ import argparse
 from pathlib import Path
 
 from kiro_paths import enable_utf8, find_app_root
+import io_util  # noqa: F401  导入即把控制台切到 UTF-8
 
 
 def backups(app: Path) -> list[Path]:

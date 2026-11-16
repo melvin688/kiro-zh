@@ -19,6 +19,7 @@ import shutil
 from pathlib import Path
 
 from kiro_paths import enable_utf8, find_app_root, find_language_pack
+import io_util  # noqa: F401  导入即把控制台切到 UTF-8
 
 PH = re.compile(r"\{\d+\}|%[sd]|\$\([^)]+\)|\$\{[^}]+\}|<[a-zA-Z/][^>]*>")
 

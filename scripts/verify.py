@@ -23,6 +23,8 @@ from kiro_paths import (
     session_assets,
 )
 
+import io_util  # noqa: E402,F401  导入即把控制台切到 UTF-8
+
 CHECKS = [
     ("out/nls.messages.json", "打开 Agent Focus"),
     ("out/nls.messages.json", "新增功能"),
