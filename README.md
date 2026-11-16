@@ -111,6 +111,7 @@ python scripts/restore.py --restore  # roll back from .zhbak files
 
 ```bash
 python -m py_compile scripts/*.py     # 语法
+python -m unittest discover -s tests -v   # 离线单测（不依赖 Kiro）
 python scripts/apply.py --dry-run     # 路径探测
 python scripts/verify.py              # 汉化体检
 ```
