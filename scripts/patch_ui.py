@@ -201,8 +201,8 @@ EXT_LITERALS = [
      'return r<1?"刚刚":r<60?`${r} 分钟前`:o<24?`${o} 小时前`:`${Math.floor(o/24)} 天前`'),
     ('`${l} updated ${Xug(r)}`', '`${l} 更新于 ${Xug(r)}`'),
     # 额度项
-    ('var Wug=y7l("Open account dashboard"),Vug="Open account dashboard"',
-     'var Wug=y7l("打开账户面板"),Vug="打开账户面板"'),
+    ('y7l("Open account dashboard")', 'y7l("打开账户面板")'),
+    ('Vug="Open account dashboard"', 'Vug="打开账户面板"'),
     ('"Usage Meter"', '"额度"'),
     # 内置模式
     ('[{id:"vibe",name:"Default",description:"General coding assistance",mcpServers:t},'
