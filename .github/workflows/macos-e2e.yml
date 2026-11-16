@@ -1,0 +1,73 @@
+name: macos-e2e
+
+# 只在手动触发和打 tag 时跑：要下载 ~400 MB 的 Kiro macOS 安装包
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 单测（真实 Darwin 上的路径判定）
+        run: python -m unittest discover -s tests -v
+
+      - name: 下载并挂载 Kiro for macOS 官方安装包
+        run: |
+          set -euo pipefail
+          ARCH=$(uname -m)
+          case "$ARCH" in arm64) A=arm64 ;; *) A=x64 ;; esac
+          VER=1.4.154
+          URL="https://prod.download.desktop.kiro.dev/releases/stable/darwin-$A/signed/$VER/kiro-ide-$VER-stable-darwin-$A.dmg"
+          echo "runner arch=$ARCH dmg=$URL"
+          curl -fL --retry 3 --retry-delay 3 -o "$RUNNER_TEMP/kiro.dmg" "$URL"
+          ls -lh "$RUNNER_TEMP/kiro.dmg"
+          hdiutil attach "$RUNNER_TEMP/kiro.dmg" -nobrowse -quiet -mountpoint "$RUNNER_TEMP/vol"
+          ls "$RUNNER_TEMP/vol"
+          mkdir -p "$RUNNER_TEMP/app"
+          cp -R "$RUNNER_TEMP/vol/Kiro.app" "$RUNNER_TEMP/app/"
+          hdiutil detach "$RUNNER_TEMP/vol" -quiet
+          echo "APP=$RUNNER_TEMP/app/Kiro.app/Contents/Resources/app" >> "$GITHUB_ENV"
+          ls "$RUNNER_TEMP/app/Kiro.app/Contents" "$RUNNER_TEMP/app/Kiro.app/Contents/Resources/app" | head -30
+
+      - name: 对真实 macOS 包打补丁（跳过语言包与重启）
+        run: |
+          set -euo pipefail
+          python scripts/apply.py --app "$APP" --no-restart --skip-nls
+
+      - name: 验收：菜单/额度条/备份/校验和
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+
+          app = Path(os.environ["APP"])
+          wb = app / "out/vs/workbench/workbench.desktop.main.js"
+          ext = app / "extensions/kiro.kiro-agent/dist/extension.js"
+          checks = {}
+          wb_text = wb.read_text(encoding="utf-8", errors="replace")
+          checks["菜单=文件"] = 'title:{value:"文件",original:"文件",' in wb_text
+          checks["菜单=帮助"] = 'title:{value:"帮助",original:"帮助",' in wb_text
+          if ext.exists():
+              ext_text = ext.read_text(encoding="utf-8", errors="replace")
+              checks["额度条"] = "▰" in ext_text or "\\u25B0" in ext_text
+          backups = sorted(p.name for p in app.rglob("*.zhbak"))
+          print("备份:", len(backups))
+          for k, v in checks.items():
+              print(f"{k}: {v}")
+          if not all(checks.values()):
+              sys.exit("验收失败：" + str([k for k, v in checks.items() if not v]))
+          print("macOS 包路径与替换全部通过")
+          PY
+
+      - name: 记录包结构（便于以后校准路径探测）
+        if: always()
+        run: |
+          ls -la "$RUNNER_TEMP/app/Kiro.app/Contents/MacOS" || true
+          du -sh "$RUNNER_TEMP/app/Kiro.app" || true
