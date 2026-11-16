@@ -46,6 +46,7 @@ jobs:
         run: |
           dist\kiro-zh.exe --version
           dist\kiro-zh.exe --help
+          dist\kiro-zh.exe translate auto --help
       - name: 发布到 Release
         uses: softprops/action-gh-release@v2
         with:

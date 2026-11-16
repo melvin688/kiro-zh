@@ -1,5 +1,11 @@
 # 变更记录
 
+## 0.6.0 — 2026-11-16
+
+- exe 增加 `translate` 子命令：不带参数时进入交互向导（提示粘贴 key → `auto` → `merge` → 可选立即烘焙重启），`kiro-zh translate auto|merge` 走命令行。
+- 向导里的 key 用 `getpass` 读，不回显、不落盘，只放当前进程环境变量。
+- 产物固定写到 `~/.kiro-zh/work`，避免双击 exe 时 cwd 不可控。
+
 ## 0.5.0 — 2026-11-16
 
 - `translate_missing.py` 新增 `auto` 子命令：调 OpenAI 兼容接口（默认 DeepSeek）批量翻译语言包缺失条目，按约 6000 字符切块、默认 4 并发、已翻好的块跳过可续跑。

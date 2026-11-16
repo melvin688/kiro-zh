@@ -34,8 +34,9 @@
 不想装 Python 就用 Release 里的单文件版（[下载最新版](https://github.com/melvin688/kiro-zh/releases/latest)）：
 
 ```text
-kiro-zh.exe            双击 → 回车开始汉化
-kiro-zh.exe verify     验收
+kiro-zh.exe                      双击 → 回车开始汉化
+kiro-zh.exe verify               验收
+kiro-zh.exe translate            补译语言包缺失条目（会提示粘贴 key，然后自动翻译→合并→烘焙）
 kiro-zh.exe restore --list / --restore   回滚
 ```
 

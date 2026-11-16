@@ -21,14 +21,77 @@ try:  # 先把控制台切到 UTF-8，否则英文版 Windows（cp1252）下打�
 except Exception:  # pragma: no cover - 打包环境缺失时不影响主流程
     pass
 
+import os  # noqa: E402
+
+os.environ.setdefault("KIRO_ZH_PROG", "kiro-zh translate")
+
 USAGE = """kiro-zh — Kiro 界面汉化
 
 用法:
-  kiro-zh apply     汉化 + 重启（可选 --dry-run / --no-restart / --skip-nls）
-  kiro-zh verify    验收：检查关键中文文案是否就位
-  kiro-zh restore   回滚：--list 看备份，--restore 执行还原
-  kiro-zh --help    显示本帮助
+  kiro-zh apply      汉化 + 重启（可选 --dry-run / --no-restart / --skip-nls）
+  kiro-zh verify     验收：检查关键中文文案是否就位
+  kiro-zh restore    回滚：--list 看备份，--restore 执行还原
+  kiro-zh translate  补译语言包缺失条目（交互式：自动翻译 -> 合并 -> 烘焙）
+  kiro-zh --help     显示本帮助
+
+translate 也可以走命令行:
+  kiro-zh translate auto  --api-url https://api.deepseek.com/v1 --model deepseek-chat
+  kiro-zh translate merge
+  （key 放环境变量 KIRO_ZH_API_KEY，也认 DEEPSEEK_API_KEY / OPENAI_API_KEY）
 """
+
+
+def _work_dir() -> Path:
+    """exe 双击时 cwd 不可控，固定放到用户目录下。"""
+    d = Path.home() / ".kiro-zh" / "work"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _translate_wizard() -> int:
+    import getpass
+    import os
+
+    import translate_missing
+
+    if not (os.environ.get("KIRO_ZH_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")):
+        print("补译需要 OpenAI 兼容接口的 API key（默认 DeepSeek，key 只在本地用，不会上传别处）。")
+        try:
+            key = getpass.getpass("粘贴 key（输入不回显，直接回车取消）：").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n已取消")
+            return 1
+        if not key:
+            print("已取消")
+            return 1
+        os.environ["KIRO_ZH_API_KEY"] = key
+
+    work = _work_dir()
+    print(f"\n=== 1/2 翻译缺失条目（产物在 {work}）")
+    sys.argv = ["kiro-zh translate", "auto", "--out", str(work)]
+    translate_missing.main()
+
+    sys.argv = ["kiro-zh translate", "merge", "--out", str(work)]
+    print("\n=== 2/2 合并进语言包")
+    try:
+        translate_missing.main()
+    except SystemExit:
+        print("没有可合并的译文，跳过。")
+        return 0
+
+    try:
+        ans = input("\n要现在烘焙并重启 Kiro 让新译文生效吗？[Y/n] ").strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        ans = "n"
+    if ans in ("", "y", "yes"):
+        sys.argv = ["kiro-zh apply"]
+        import apply
+
+        apply.main()
+    else:
+        print("已跳过。之后运行 kiro-zh apply 即可生效。")
+    return 0
 
 
 def _ask_enter() -> None:
@@ -69,6 +132,12 @@ def main() -> int:
         import restore
 
         restore.main()
+    elif cmd == "translate":
+        if not rest:
+            return _translate_wizard()
+        import translate_missing
+
+        translate_missing.main()
     else:
         print(f"未知命令：{cmd}\n\n{USAGE}")
         return 2

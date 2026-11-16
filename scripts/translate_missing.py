@@ -259,15 +259,16 @@ def cmd_auto(args) -> None:
 
     print(f"翻译完成 {done} 块，失败 {failed} 块，产物在 {outdir}")
     if done:
+        prog = os.environ.get("KIRO_ZH_PROG", "python scripts/translate_missing.py")
         print("接下来合并进语言包：")
-        print(f"  python scripts/translate_missing.py merge --out {outdir}")
+        print(f"  {prog} merge --out {outdir}")
 
 
 def cmd_merge(args) -> None:
     app = find_app_root(args.app)
     added, skipped, problem = merge_out(app, Path(args.out))
     print(f"合并 {added} 条，跳过 {skipped} 条，占位符问题 {problem} 条")
-    print("改完要重跑 localize_nls.py 并重启，界面才会用到新译文。")
+    print("改完要重跑一次 apply（烘焙 NLS + 重启），界面才会用到新译文。")
 
 
 def _english_for(app: Path, module: str, key: str) -> str | None:
