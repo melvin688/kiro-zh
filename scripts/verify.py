@@ -80,6 +80,13 @@ def main() -> None:
         print(f"  {'OK  ' if ok else '缺失'} {rel}  ← 「{needle}」")
         failed += 0 if ok else 1
 
+    asar = app / "node_modules.asar"
+    if asar.exists():
+        raw = asar.read_bytes()
+        ok = "打开项目".encode() in raw and "克隆代码库".encode() in raw
+        print(f"  {'OK  ' if ok else '缺失'} node_modules.asar ← 欢迎页文案")
+        failed += 0 if ok else 1
+
     print("\n== 语法")
     targets = [app / "out" / "nls.messages.js",
                app / "out" / "vs" / "workbench" / "workbench.desktop.main.js",

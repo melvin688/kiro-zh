@@ -342,12 +342,12 @@ def _mutate_agent_manifest(doc) -> int:
             if not node:
                 continue
             for field in ("markdownDescription", "description"):
-                if field in node:
+                if field in node and node[field] != zh:
                     node[field] = zh
                     n += 1
         for node in (block.get("properties") or {}).values():
             for i, desc in enumerate(node.get("enumDescriptions") or []):
-                if desc in ENUM_DESC:
+                if desc in ENUM_DESC and desc != ENUM_DESC[desc]:
                     node["enumDescriptions"][i] = ENUM_DESC[desc]
                     n += 1
     return n
@@ -364,7 +364,7 @@ def _mutate_remote_manifest(doc) -> int:
             if not node:
                 continue
             for field in ("markdownDescription", "description"):
-                if field in node:
+                if field in node and node[field] != zh:
                     node[field] = zh
                     n += 1
     return n

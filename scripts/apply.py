@@ -10,16 +10,32 @@
 from __future__ import annotations
 
 import argparse
+import io
+import json
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
+import asar_tool
 import fix_checksums
 import localize_nls
 import patch_ui
 from kiro_paths import data_dir, enable_utf8, find_app_root
+
+WELCOME_ENTRY = "@kiro/sign-in-page/dist/index.js"
+
+
+def patch_welcome(app: Path) -> int:
+    """欢迎页 / 登录页在 node_modules.asar 里，用等长替换处理。"""
+    asar = app / "node_modules.asar"
+    mapping_path = Path(__file__).resolve().parent.parent / "assets" / "asar-welcome-zh.json"
+    if not asar.exists() or not mapping_path.exists():
+        print("  跳过：找不到 node_modules.asar 或文案表")
+        return 0
+    mapping = json.load(io.open(mapping_path, encoding="utf-8"))
+    return asar_tool.apply_map(asar, WELCOME_ENTRY, mapping)
 
 
 def exe_path(app: Path) -> Path | None:
@@ -62,21 +78,27 @@ def main() -> None:
     print(f"Kiro：{app}\n")
 
     if not args.skip_ui:
-        print("== 1/4 界面汉化")
+        print("== 1/5 界面汉化")
         rows = patch_ui.run(app, args.dry_run)
         if not args.dry_run:
             for status, name, done, miss in rows:
                 print(f"  {status:<4} {name:<34} 替换 {done:>3}  未命中 {miss:>3}")
 
+        print("\n== 2/5 欢迎页（node_modules.asar）")
+        if args.dry_run:
+            print("  dry-run：跳过 asar")
+        else:
+            patch_welcome(app)
+
     if not args.skip_nls:
-        print("\n== 2/4 NLS 烘焙")
+        print("\n== 3/5 NLS 烘焙")
         localize_nls.run(app, args.dry_run)
 
     if not args.dry_run:
-        print("\n== 3/4 校验值")
+        print("\n== 4/5 校验值")
         fix_checksums.run(app)
 
-    print("\n== 4/4 重启")
+    print("\n== 5/5 重启")
     if args.dry_run:
         print("dry-run：跳过重启")
         return

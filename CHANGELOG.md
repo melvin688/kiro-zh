@@ -1,5 +1,12 @@
 # 变更记录
 
+## 0.2.0 — 2026-11-16
+
+- 新增 `asar_tool.py`：解析 `node_modules.asar` 头部、列出条目里的可见文案、对指定条目做**等长字节替换**（中文短则补空格，保证 asar 结构不变）。
+- 欢迎页 / 登录页（`@kiro/sign-in-page`）6 条文案汉化：`An agentic IDE…`、`Get started`、`Open a project`、`Recent projects`、`Clone repository`、`Connect to`。
+- `apply.py` 增加第 2 步「欢迎页（asar）」，`verify.py` 增加 asar 文案检查。
+- 修复扩展清单汉化每次都判为「已改」的计数问题（值相同不再写入）。
+
 ## 0.1.0 — 2026-11-16
 
 首个可用版本，基于 Kiro 1.4.178（内嵌 VS Code 1.131.0）实测。

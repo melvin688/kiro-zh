@@ -14,6 +14,7 @@
 | 内置模式 | Default / Spec / Quick Spec / Bug Fix | 默认 / 规格 / 快速规格 / 缺陷修复 |
 | 设置项说明 | 英文长段落 | 中文长段落（含枚举项说明） |
 | 状态栏 | Autocomplete / Sandbox: Off / What's new | 自动补全 / 沙箱：关闭 / 新增功能 |
+| 欢迎页（登录页组件） | Open a project / Clone repository / Connect to | 打开项目 / 克隆代码库 / 连接到 |
 | 额度 | Kiro Pro 82.68 / 789 updated just now | Kiro Pro ▰▱▱▱▱▱▱▱▱▱ 10% · 82.68 / 789 更新于 刚刚 |
 
 ## 快速开始
@@ -49,6 +50,7 @@ python scripts/restore.py --app "<同上>" --restore  # 执行回滚
 | `scripts/patch_ui.py` | 自绘 UI 的英文字面量直替换（菜单、聊天、模式、状态栏、沙箱、额度百分比、密度） |
 | `scripts/localize_nls.py` | 把语言包中文烘焙进 `out/nls.messages.json/.js`，并清理 `%APPDATA%/Kiro/clp` 缓存 |
 | `scripts/fix_checksums.py` | 重算 `product.json` 校验值，消除「安装似乎损坏」告警 |
+| `scripts/asar_tool.py` | 读写 `node_modules.asar`：列可见文案、做等长字节替换（欢迎页/登录页） |
 | `scripts/translate_missing.py` | 导出语言包缺失条目为分块、合并回译文（占位符校验） |
 | `scripts/restore.py` | 按 `.zhbak` 备份回滚 |
 | `scripts/verify.py` | 冒烟验收：关键中文串是否在位 + `node --check` 语法检查 |
@@ -62,6 +64,7 @@ Kiro 的界面文案有三个来源，只改一处不够：
 1. **官方语言包** `main.i18n.json`：按「模块 + key」取文案的老式代码生效，覆盖多数原生 UI。
 2. **NLS 消息表** `out/nls.messages.json`：workbench / sessions 渲染进程用 `localize(index)` 读这张扁平数组，语言包改了也不生效，必须把中文烘焙进数组本身，并清掉 `%APPDATA%/Kiro/clp` 缓存。
 3. **硬编码字面量**：聊天面板（React bundle）、权限模式、额度文案、状态栏项都在 minified bundle 里写死英文，只能按字面量替换。
+4. **asar 内的页面**：欢迎页 / 登录页（`@kiro/sign-in-page`）打包在 `node_modules.asar`，改的是容器里的文件字节，必须等长替换才不破坏 asar 结构。
 
 细节见 [docs/原理.md](docs/原理.md)。
 
