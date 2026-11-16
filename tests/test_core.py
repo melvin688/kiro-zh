@@ -90,5 +90,34 @@ class AsarTest(unittest.TestCase):
             self.assertEqual(asar.read_bytes()[-len(payload):], payload)
 
 
+class QuotaAdaptiveTest(unittest.TestCase):
+    # 故意换掉全部压缩符号名，模拟 Kiro 升级后 minify 结果变化
+    SNIPPET = (
+        'function Qz(e,t){let{currency:n,currentOverages:r,currentUsage:o,freeTrialUsage:s,'
+        'overageCharges:a,usageLimit:l}=t,u=zz(e);'
+        'return s&&s.currentUsage<s.usageLimit?`${u} Bonus ${s.currentUsage} / ${s.usageLimit}'
+        ' (${s.daysRemaining} days left)`:r>0||a>0?`${u} Overage ${r} '
+        '(${n.symbol}${a.toFixed(2)})`:`${u} ${o} / ${l}`}'
+    )
+
+    def test_patches_when_symbols_change(self):
+        out, n = patch_ui.fix_quota_adaptive(self.SNIPPET)
+        self.assertEqual(n, 3)
+        self.assertIn("▰", out)
+        self.assertIn("赠送", out)
+        self.assertIn("超额", out)
+        self.assertNotIn("Bonus", out)
+
+    def test_idempotent(self):
+        once, _ = patch_ui.fix_quota_adaptive(self.SNIPPET)
+        twice, n = patch_ui.fix_quota_adaptive(once)
+        self.assertEqual(n, 0)
+        self.assertEqual(once, twice)
+
+    def test_missing_markers_left_alone(self):
+        text = 'const a=1;'
+        self.assertEqual(patch_ui.fix_quota_adaptive(text), (text, 0))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -118,7 +118,7 @@ python scripts/verify.py              # 汉化体检
 
 路线图：
 
-- [ ] 版本自适应：按正则而非固定符号定位额度函数
+- [x] 版本自适应：额度函数按 `Bonus` / `currentOverages` 锚点 + 模板正则定位，Kiro 升级重命名符号后仍能命中
 - [ ] 差额翻译自动补全（接任意 LLM 批量译 `translate_missing.py chunks` 的产物）
 - [ ] PyInstaller 打包成单文件 exe，免装 Python
 - [ ] Linux / macOS 支持

@@ -13,6 +13,7 @@ import argparse
 import io
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -26,7 +27,7 @@ from kiro_paths import (
     session_dist,
 )
 
-import io_util  # noqa: E402,F401  导入即把控制台切到 UTF-8
+from io_util import read_text, write_text
 
 # ---------------------------------------------------------------- 替换工具
 
@@ -201,6 +202,68 @@ QUOTA_NEW = (
     '`${u} ${tag} · ${o} / ${l}`}'
 )
 
+# ---------------------------------------------------------------- 额度（版本自适应）
+# 精确串比的是 minify 后的符号名（Zug/y7l…），Kiro 每次自动更新都会重命名，
+# 所以再加一层：只认稳定英文文案与解构字段名，在函数体窗口内按正则改写。
+QUOTA_BONUS_RE = re.compile(
+    r"`\$\{(\w+)\} Bonus \$\{(\w+)\.currentUsage\} / \$\{(\w+)\.usageLimit\}"
+    r" \(\$\{(\w+)\.daysRemaining\} days left\)`"
+)
+QUOTA_OVERAGE_RE = re.compile(
+    r"`\$\{(\w+)\} Overage \$\{(\w+)\} \(\$\{(\w+)\.symbol\}\$\{(\w+)\.toFixed\(2\)\}\)`"
+)
+QUOTA_MAIN_RE = re.compile(r"`\$\{(\w+)\} \$\{(\w+)\} / \$\{(\w+)\}`")
+
+
+def _pct_tag(cur: str, lim: str) -> str:
+    """生成在模板串里就地算百分比 + 十格进度条的表达式片段。"""
+    return (
+        "${(()=>{const d=" + lim + ",c=d>0?Math.max(0,Math.min(100,Math.round(" + cur
+        + "/d*100))):0,f=Math.round(c/10);return \"▰\".repeat(f)+\"▱\".repeat(10-f)"
+        '+" "+c+"%"})()}'
+    )
+
+
+def fix_quota_adaptive(text: str) -> tuple[str, int]:
+    """按稳定文案改写额度显示；改不动就原样返回（宁可英文，不能改坏）。"""
+    if "▰" in text or "\\u25B0" in text:  # 已经是打过补丁的
+        return text, 0
+    # 先锚在唯一文案 Bonus 上，再退回接口字段 currentOverages（压缩后不变）。
+    anchors = [m.start() for m in re.finditer(r"Bonus ", text)]
+    anchors += [m.start() for m in re.finditer(r"currentOverages:", text)]
+    for pos in anchors[:12]:
+        start, end = max(0, pos - 300), min(len(text), pos + 1400)
+        body = text[start:end]
+        if not (QUOTA_MAIN_RE.search(body) or QUOTA_BONUS_RE.search(body)):
+            continue
+        changed = 0
+
+        m = QUOTA_MAIN_RE.search(body)
+        if m:
+            u, cur, lim = m.groups()
+            new = "`${%s} %s · ${%s} / ${%s}`" % (u, _pct_tag(cur, lim), cur, lim)
+            body = body[: m.start()] + new + body[m.end():]
+            changed += 1
+
+        m = QUOTA_BONUS_RE.search(body)
+        if m:
+            u, su, lu, dr = m.groups()
+            new = "`${%s} 赠送 ${%s.currentUsage} / ${%s.usageLimit}（剩 ${%s.daysRemaining} 天）`" % (
+                u, su, lu, dr)
+            body = body[: m.start()] + new + body[m.end():]
+            changed += 1
+
+        m = QUOTA_OVERAGE_RE.search(body)
+        if m:
+            u, ov, cu, amt = m.groups()
+            new = "`${%s} 超额 ${%s}（${%s.symbol}${%s.toFixed(2)}）`" % (u, ov, cu, amt)
+            body = body[: m.start()] + new + body[m.end():]
+            changed += 1
+
+        return text[:start] + body + text[end:], changed
+    return text, 0
+
+
 EXT_LITERALS = [
     # 相对时间 / 抓取时间
     ('return r<1?"just now":r<60?`${r}m ago`:o<24?`${o}h ago`:`${Math.floor(o/24)}d ago`',
@@ -273,6 +336,17 @@ EXT_LITERALS = [
 def patch_extension(app: Path) -> None:
     ext = kiro_agent_dir(app) / "dist" / "extension.js"
     patch_text(ext, [(QUOTA_OLD, QUOTA_NEW)], label="extension.js(额度)")
+    # 精确串因升级失效时，退回按文案正则改写（符号名换了也能命中）
+    if ext.exists():
+        text = read_text(ext)
+        if "▰" not in text and "\\u25B0" not in text:
+            new_text, n = fix_quota_adaptive(text)
+            if n and new_text != text:
+                _backup(ext)
+                write_text(ext, new_text)
+                REPORT.append(("已改", "extension.js(额度·自适应)", n, 0))
+            else:
+                REPORT.append(("未命中", "extension.js(额度·自适应)", 0, 1))
     patch_text(ext, EXT_LITERALS, label="extension.js")
 
 

@@ -17,7 +17,7 @@ description: Use when 汉化 Kiro IDE 界面或修 Kiro 中文显示问题。
 
 1. 语言包 `~/.kiro/extensions/ms-ceintl.vscode-language-pack-zh-hans-*/translations/main.i18n.json` —— 只管按「模块 + key」取文案的代码。
 2. NLS 数组 `resources/app/out/nls.messages.json` —— workbench/sessions 渲染进程读的扁平数组，必须把中文烘焙进去，且要删 `%APPDATA%/Kiro/clp` 缓存才生效。
-3. minified bundle 里的字面量 —— 聊天面板、权限模式、额度文案、状态栏，只能按内容替换。
+3. minified bundle 里的字面量 —— 聊天面板、权限模式、额度文案、状态栏，只能按内容替换。额度优先精确串，失配后按 `Bonus` / `currentOverages` 锚点正则改写，符号重命名也能命中。
 4. `node_modules.asar` 里的欢迎页/登录页 —— 容器里的文件必须**等长**替换（用 `asar_tool.py`），改长度会破坏 asar。
 
 ## 操作
