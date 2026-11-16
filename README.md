@@ -17,6 +17,14 @@
 | 欢迎页（登录页组件） | Open a project / Clone repository / Connect to | 打开项目 / 克隆代码库 / 连接到 |
 | 额度 | Kiro Pro 82.68 / 789 updated just now | Kiro Pro ▰▱▱▱▱▱▱▱▱▱ 10% · 82.68 / 789 更新于 刚刚 |
 
+## 截图
+
+![Kiro 中文界面](docs/img/ui.png)
+
+![状态栏额度条与百分比](docs/img/status.png)
+
+截图在空项目里截取，不含个人路径与账号信息；`Claude Opus 5.5` 等模型名、个别由服务端下发的名称保持英文。
+
 ## 快速开始
 
 前置：Windows，已装 Kiro，已装简体中文语言包（`ms-ceintl.vscode-language-pack-zh-hans`），Python 3.9+。

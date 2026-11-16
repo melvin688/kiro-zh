@@ -1,5 +1,11 @@
 # 变更记录
 
+## 0.2.1 — 2026-11-16
+
+- 补译聊天面板：`See all`、`(optional)`、`New Session`、`Plan` 及其描述、响应风格 `Default`。
+- 重启步骤除 `clp` 外一并清理 `Cache` / `Code Cache` / `GPUCache`，避免 webview 继续用旧 bundle。
+- README 增加实机截图（空项目截取，无个人信息）。
+
 ## 0.2.0 — 2026-11-16
 
 - 新增 `asar_tool.py`：解析 `node_modules.asar` 头部、列出条目里的可见文案、对指定条目做**等长字节替换**（中文短则补空格，保证 asar 结构不变）。

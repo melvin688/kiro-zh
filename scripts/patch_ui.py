@@ -149,6 +149,8 @@ CHAT_LITERALS = [
     ('?"file changed":"files changed"', '?"个文件已更改":"个文件已更改"'),
     ('"Cannot restore while the agent is working"', '"agent 正在工作时无法还原"'),
     ('children:"Checkpoint"', 'children:"检查点"'),
+    ('"See all"', '"查看全部"'),
+    ('children:"(optional)"', 'children:"（可选）"'),
     ('children:"Restore"', 'children:"还原"'),
     ('"aria-label":"Restore"', '"aria-label":"还原"'),
     ('"Included Steering"', '"生效的 Steering"'),
@@ -205,6 +207,14 @@ EXT_LITERALS = [
     ('Vug="Open account dashboard"', 'Vug="打开账户面板"'),
     ('"Usage Meter"', '"额度"'),
     # 内置模式
+    ('{id:s2r,name:"Default",description:"Use Kiro\'s standard response style."}',
+     '{id:s2r,name:"默认",description:"使用 Kiro 的标准回答风格。"}'),
+    ('"New Session"', '"新会话"'),
+    ('name:"Plan",description:r.description', 'name:"计划",description:r.description'),
+    ('Szf="Plan-only mode that helps break ideas down into an implementation plan without making any changes"',
+     'Szf="只做计划的模式：把想法拆成实现方案，不改动任何代码"'),
+    ('Ezf="Transform any idea into fully working code. What do you want to build today?"',
+     'Ezf="把任何想法变成可运行的代码。今天想构建什么？"'),
     ('[{id:"vibe",name:"Default",description:"General coding assistance",mcpServers:t},'
      '{id:"spec",name:"Spec",description:"Structured feature development",mcpServers:t},'
      '{id:"quick-spec",name:"Quick Spec",description:"Fast spec workflow: clarify, then auto-generate '

@@ -55,11 +55,14 @@ def restart(app: Path) -> None:
         return
     subprocess.run(["taskkill", "/IM", exe.name], capture_output=True, text=True)
     time.sleep(6)
-    cache = data_dir() / "clp"
-    if cache.exists():
-        import shutil
+    # clp 是 NLS 文案缓存；Cache / Code Cache 是 webview 的 JS 缓存。
+    # 只清 clp 时，改过的聊天面板 bundle 可能仍从缓存读旧字节。
+    import shutil
 
-        shutil.rmtree(cache, ignore_errors=True)
+    for name in ("clp", "Cache", "Code Cache", "GPUCache"):
+        cache = data_dir() / name
+        if cache.exists():
+            shutil.rmtree(cache, ignore_errors=True)
     os.startfile(str(exe))  # noqa: S606 - 需要以桌面应用方式启动
     print(f"已重启：{exe}")
 
